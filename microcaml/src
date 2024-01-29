@@ -1,0 +1,588 @@
+open TokenTypes
+
+exception TypeError of string
+exception DeclareError of string
+exception DivByZeroError 
+
+(* Part 1: Lexer - IMPLEMENT YOUR CODE BELOW *)
+let count_quotes str =
+  let rec loop i count =
+    if i >= String.length str then count
+    else if str.[i] = '"' then loop (i + 1) (count + 1)
+    else loop (i + 1) count
+  in loop 0 0
+
+let rec tokenize str = 
+	let r_paren = Str.regexp ")" in
+	let l_paren = Str.regexp "(" in
+    let r_int = Str.regexp "[0-9]+" in
+    let r_str = Str.regexp "\"[^\"]*\"" in
+    let r_all = Str.regexp "[a-zA-Z][a-zA-Z0-9]*" in
+    let r_n = Str.regexp "(-[0-9]+)" in
+    let r_extr = Str.regexp "[ \t\n]*" in 
+
+    let len = String.length str in 
+
+    let rec tok pos = 
+
+        if (count_quotes str) mod 2 = 1 then raise (InvalidInputException "Wrong")
+    
+        else if pos >= len then []
+         (*Basic cases*)
+
+
+         (*Signs*)
+
+          else if (Str.string_match (Str.regexp "+")  str pos)  then (Tok_Add)::tok (pos+1)
+
+              else if (Str.string_match (Str.regexp "->")  str pos)  then (Tok_Arrow)::tok (pos+2)
+
+        else if (Str.string_match (Str.regexp "-")  str pos)  then (Tok_Sub)::tok (pos+1)
+
+        else if (Str.string_match (Str.regexp "*" ) str pos)  then (Tok_Mult)::tok (pos+1)
+
+        else if (Str.string_match (Str.regexp "/")  str pos)  then (Tok_Div)::tok (pos+1)
+
+        else if (Str.string_match (Str.regexp "\\^") str pos)  then (Tok_Concat)::tok (pos+1)
+
+        else if (Str.string_match (Str.regexp "=")  str pos)  then (Tok_Equal)::tok (pos+1)
+
+        else if (Str.string_match (Str.regexp "<>")  str pos)  then (Tok_NotEqual)::tok (pos+2)
+
+        else if (Str.string_match (Str.regexp ">")  str pos)  then (Tok_Greater)::tok (pos+1)
+
+        else if (Str.string_match (Str.regexp "<")  str pos)  then (Tok_Less)::tok (pos+1)
+
+        else if (Str.string_match (Str.regexp ">=")  str pos)  then (Tok_GreaterEqual)::tok (pos+2)
+
+        else if (Str.string_match (Str.regexp "<=")  str pos)  then (Tok_LessEqual)::tok (pos+2)
+
+        else if (Str.string_match (Str.regexp "||")  str pos)  then (Tok_Or)::tok (pos+2)
+
+        else if (Str.string_match (Str.regexp "&&")  str pos)  then (Tok_And)::tok (pos+2)
+
+        else if (Str.string_match (Str.regexp ";;")  str pos)  then (Tok_DoubleSemi)::tok (pos+2) 
+
+        (*Words*)
+    (*Not*)
+        else if (Str.string_match (Str.regexp "not")  str pos)  then 
+        	 
+			let value = Str.matched_string str in
+			let curr_pos = (Str.match_end()) in
+			
+			if (Str.string_match r_all str curr_pos)  then
+                let curr_val = Str.matched_string str in
+				(Tok_ID(value^curr_val))::(tok (Str.match_end()))
+			else (Tok_Not)::(tok (pos+3))
+    (*If*)  
+        else if (Str.string_match (Str.regexp "if")  str pos)  then 
+        	 
+			let value = Str.matched_string str in
+			let curr_pos = (Str.match_end()) in
+			
+			if (Str.string_match r_all str curr_pos)  then
+                let curr_val = Str.matched_string str in
+				(Tok_ID(value^curr_val))::(tok (Str.match_end()))
+			else (Tok_If)::(tok (pos+2))
+    (*Then*)
+        
+        else if (Str.string_match (Str.regexp "then")  str pos)  then 
+        	 
+			let value = Str.matched_string str in
+			let curr_pos = (Str.match_end()) in
+			
+			if (Str.string_match r_all str curr_pos)  then
+                let curr_val = Str.matched_string str in
+				(Tok_ID(value^curr_val))::(tok (Str.match_end()))
+			else (Tok_Then)::(tok (pos+4))
+    (*Else*)
+        else if (Str.string_match (Str.regexp "else")  str pos)  then 
+        	 
+			let value = Str.matched_string str in
+			let curr_pos = (Str.match_end()) in
+			
+			if (Str.string_match r_all str curr_pos)  then
+                let curr_val = Str.matched_string str in
+				(Tok_ID(value^curr_val))::(tok (Str.match_end()))
+			else (Tok_Else)::(tok (pos+4))
+    (*Let*)
+        else if (Str.string_match (Str.regexp "let")  str pos)  then 
+        	 
+			let value = Str.matched_string str in
+			let curr_pos = (Str.match_end()) in
+			
+			if (Str.string_match r_all str curr_pos)  then
+                let curr_val = Str.matched_string str in
+				(Tok_ID(value^curr_val))::(tok (Str.match_end()))
+			else (Tok_Let)::(tok (pos+3))
+    (*Def*)
+        else if (Str.string_match (Str.regexp "def")  str pos)  then 
+        	 
+			let value = Str.matched_string str in
+			let curr_pos = (Str.match_end()) in
+			
+			if (Str.string_match r_all str curr_pos)  then
+                let curr_val = Str.matched_string str in
+				(Tok_ID(value^curr_val))::(tok (Str.match_end()))
+			else (Tok_Def)::(tok (pos+3))
+    (*In*)
+        else if (Str.string_match (Str.regexp "in")  str pos)  then 
+        	 
+			let value = Str.matched_string str in
+			let curr_pos = (Str.match_end()) in
+			
+			if (Str.string_match r_all str curr_pos)  then
+                let curr_val = Str.matched_string str in
+				(Tok_ID(value^curr_val))::(tok (Str.match_end()))
+			else (Tok_In)::(tok (pos+2))
+    (*Rec*)
+        else if (Str.string_match (Str.regexp "rec")  str pos)  then 
+        	 
+			let value = Str.matched_string str in
+			let curr_pos = (Str.match_end()) in
+			
+			if (Str.string_match r_all str curr_pos)  then
+                let curr_val = Str.matched_string str in
+				(Tok_ID(value^curr_val))::(tok (Str.match_end()))
+			else (Tok_Rec)::(tok (pos+3))
+    (*Fun*)
+        else if (Str.string_match (Str.regexp "fun")  str pos)  then 
+        	 
+			let value = Str.matched_string str in
+			let curr_pos = (Str.match_end()) in
+			
+			if (Str.string_match r_all str curr_pos)  then
+                let curr_val = Str.matched_string str in
+				(Tok_ID(value^curr_val))::(tok (Str.match_end()))
+			else (Tok_Fun)::(tok (pos+3))
+    (*True*)
+        else if (Str.string_match (Str.regexp "true")  str pos)  then 
+        	 
+			let value = Str.matched_string str in
+			let curr_pos = (Str.match_end()) in
+			
+			if (Str.string_match r_all str curr_pos)  then
+                let curr_val = Str.matched_string str in
+				(Tok_ID(value^curr_val))::(tok (Str.match_end()))
+			else (Tok_Bool(true))::(tok (pos+4))
+    (*False*)
+        else if (Str.string_match (Str.regexp "false")  str pos)  then 
+        	 
+			let value = Str.matched_string str in
+			let curr_pos = (Str.match_end()) in
+			
+			if (Str.string_match r_all str curr_pos)  then
+                let curr_val = Str.matched_string str in
+				(Tok_ID(value^curr_val))::(tok (Str.match_end()))
+			else (Tok_Bool(false))::(tok (pos+5))
+
+        (*Complex cases*)
+
+        (*Int*)
+        else if (Str.string_match r_n str pos) then
+            let s = Str.matched_string str  in
+            let value = String.sub str (pos+1) ((String.length s)-2) in 
+            Tok_Int(int_of_string value):: tok(pos+(String.length value)+2)
+        
+        else if(Str.string_match r_int str pos) then
+            let value = Str.matched_string str in
+            Tok_Int(int_of_string value):: tok(pos+(String.length value))
+
+        (*String*)
+        
+        else if(Str.string_match r_str str pos) then
+            (*Other cases*) 
+            let s = Str.matched_string str in
+            let value = String.sub str (pos+1) (String.length s-2) in 
+            Tok_String(value):: tok(pos+(String.length s))
+
+        (*Weird cases*)
+        else if (Str.string_match l_paren str pos)  then (Tok_LParen)::tok (pos+1)
+
+        else if (Str.string_match r_paren str pos)  then (Tok_RParen)::tok (pos+1)
+
+        (*ID*)
+
+        else if (Str.string_match r_all str pos)
+			then let token = Str.matched_string str in 
+			(Tok_ID token)::(tok (Str.match_end()))
+        
+        (*End*)
+        else if (Str.string_match r_extr str pos) then tok(pos+1) 
+
+        else raise (InvalidInputException "Wrong") in 
+
+        tok 0
+
+        (* Matches the next token in the list, throwing an error if it doesn't match the given token *)
+let match_token (toks: token list) (tok: token) =
+  match toks with
+  | [] -> raise (InvalidInputException(string_of_token tok))
+  | h::t when h = tok -> t
+  | h::_ -> raise (InvalidInputException(
+      Printf.sprintf "Expected %s from input %s, got %s"
+        (string_of_token tok)
+        (string_of_list string_of_token toks)
+        (string_of_token h)))
+
+(* Matches a sequence of tokens given as the second list in the order in which they appear, throwing an error if they don't match *)
+let match_many (toks: token list) (to_match: token list) =
+  List.fold_left match_token toks to_match
+
+(* Return the next token in the token list as an option *)
+let lookahead (toks: token list) = 
+  match toks with
+  | [] -> None
+  | h::t -> Some h
+
+(* Return the token at the nth index in the token list as an option*)
+let rec lookahead_many (toks: token list) (n: int) = 
+  match toks, n with
+  | h::_, 0 -> Some h
+  | _::t, n when n > 0 -> lookahead_many t (n-1)
+  | _ -> None
+
+(* Part 2: Parsing expressions *)
+let rec parse_expr toks = 
+
+  let(t, lst) = parse_base toks in 
+  if t = [] then (t, lst) else raise(Invalid_argument "Exceptional") 
+and parse_base toks = parse_let toks
+    
+and parse_let toks = 
+  match lookahead toks with
+  |Some Tok_Let -> (
+      let lst1 = match_token toks Tok_Let in 
+      let(lst2, is_r) = match lookahead lst1 with 
+        |Some Tok_Rec -> (match_token lst1 Tok_Rec, true)
+        |_ -> (lst1, false) in
+      let (lst3, e1) = parse_prim lst2 in
+      match lookahead lst3 with
+      |Some Tok_Equal -> (let lst4 = match_token lst3 Tok_Equal in
+                          let (lst5, e2) = parse_base lst4 in 
+                          match lookahead lst5 with 
+                          |Some Tok_In ->( let lst6 = match_token lst5 Tok_In in
+                                           let(lst7, e3) = parse_base lst6 in 
+                                           let c = match e1 with 
+                                             |ID d -> d
+                                             |_ -> "x" in
+                                           (lst7, Let(c, is_r, e2, e3)))
+                          |_ -> raise (Invalid_argument "Error"))
+      |_-> raise (Invalid_argument "Errorrr"))
+  |_ -> parse_if toks 
+
+         
+and parse_if toks = 
+  match  lookahead toks with
+  | Some Tok_If ->(
+      let lst1 = match_token toks Tok_If in
+      let (lst2,e1) = (parse_base lst1) in 
+      match lookahead lst2 with 
+      |Some Tok_Then -> (let lst3 = match_token lst2 Tok_Then in
+                         let(lst4, e2) = (parse_base lst3) in
+                         match lookahead lst4 with 
+                         |Some Tok_Else -> let lst5 = match_token lst4 Tok_Else in 
+                             let (lst6, e3) = parse_base lst5 in (lst6, (If(e1, e2, e3))) 
+                         |_ -> raise (Invalid_argument "xception"))
+      |_ -> raise (Invalid_argument "No else"))
+  |_ -> parse_fun toks
+                       
+                       
+and parse_fun toks = 
+  match  lookahead toks with
+  | Some Tok_Fun ->( let lst1 = match_token toks Tok_Fun in
+                     match lookahead lst1 with
+                     |Some Tok_ID(c) -> (let id = c in
+                                         let (lst2, e1) = parse_prim lst1 in
+                                         match lookahead lst2 with
+                                         |Some Tok_Arrow -> (let lst3 = match_token lst2 Tok_Arrow in
+                                                             let (lst4, e2) = parse_base lst3 in 
+                                                             (lst4, Fun(id, e2))) 
+                                         |_ -> raise (Invalid_argument "Fun wrong4"))
+                     |_ -> raise(Invalid_argument "Arrow missing")) 
+  |_ -> parse_or toks
+      
+          
+and parse_or toks = 
+  let (lst1, e1) = (parse_and toks) in
+  match  lookahead lst1 with
+  | Some Tok_Or -> let lst2 = (match_token lst1 Tok_Or) in 
+      let (lst3, e2) = (parse_or lst2) in 
+      (lst3, Binop(Or,e1,e2)) 
+  |_ -> (lst1, e1)
+  
+  
+and parse_and toks = 
+  let (lst1, e1) = (parse_equal toks) in
+  match  lookahead lst1 with
+  | Some Tok_And -> let lst2 = (match_token lst1 Tok_And) in 
+      let (lst3, e2) = (parse_and lst2) in 
+      (lst3, Binop(And,e1,e2))
+  | _ -> (lst1, e1)
+
+and parse_equal toks = 
+  let (lst1, e1) = (parse_relational toks) in
+  match  lookahead lst1 with
+  | Some Tok_Equal -> let lst2 = (match_token lst1 Tok_Equal) in
+      let (lst3, e2) = (parse_equal lst2) in (lst3, Binop(Equal,e1,e2))
+  | Some Tok_NotEqual -> let lst2 = (match_token lst1 Tok_NotEqual) in
+      let (lst3, e2) = (parse_equal lst2) in (lst3, Binop(NotEqual,e1,e2))
+  | _ -> (lst1, e1)
+
+and parse_relational toks = 
+  let (lst1, e1) = (parse_additive toks) in
+  match  lookahead lst1 with
+
+  | Some Tok_Less -> let lst2 = (match_token lst1 Tok_Less) in
+      let (lst3, e2) = (parse_relational lst2) in (lst3, Binop (Less,e1,e2))
+  | Some Tok_Greater -> let lst2 = (match_token lst1 Tok_Greater) in
+      let (lst3, e2) = (parse_relational lst2) in (lst3, Binop(Greater,e1,e2))
+  | Some Tok_LessEqual -> let lst2 = (match_token lst1 Tok_LessEqual) in
+      let (lst3, e2) = (parse_relational lst2) in (lst3, Binop(LessEqual,e1,e2))
+  | Some Tok_GreaterEqual -> let lst2 = (match_token lst1 Tok_GreaterEqual) in
+      let (lst3, e2) = (parse_relational lst2) in (lst3, Binop(GreaterEqual,e1,e2))
+
+  | _ -> (lst1, e1) 
+
+and parse_additive toks = 
+  let(lst1, e1) = (parse_multiplicative toks) in 
+  match  lookahead lst1 with 
+  |Some Tok_Add -> let lst2 = (match_token lst1 Tok_Add) in 
+      let(lst3, e2) = (parse_additive lst2) in 
+      (lst3, Binop(Add,e1,e2))
+  |Some Tok_Sub -> let lst2 = (match_token lst1 Tok_Sub) in 
+      let(lst3,  e2) = (parse_additive lst2) in 
+      (lst3, Binop (Sub, e1, e2))
+  |_ -> (lst1, e1)
+
+
+and parse_multiplicative toks = 
+  let(lst1, e1) = parse_concat toks in 
+  match  lookahead lst1 with 
+  |Some Tok_Mult -> let lst2 = match_token lst1 Tok_Mult in 
+      let(lst3, e2) = (parse_multiplicative lst2) in 
+      (lst3, Binop (Mult,e1, e2))
+  |Some Tok_Div-> let lst2 = match_token lst1 Tok_Div in 
+      let(lst3, e2) = (parse_multiplicative lst2) in 
+      (lst3, Binop (Div, e1, e2))
+  |_ -> (lst1, e1)
+
+and parse_concat toks = 
+  let(lst1, e1) = parse_unary toks in 
+  match  lookahead lst1 with 
+  |Some Tok_Concat -> let lst2 = match_token lst1 Tok_Concat in 
+      let(lst3, e2) = (parse_concat lst2) in 
+      (lst3, Binop(Concat,e1, e2))
+  |_ -> (lst1, e1)
+
+and parse_unary toks = 
+  match  lookahead toks with 
+  |Some Tok_Not -> let lst1 = match_token toks Tok_Not in 
+      let(lst2, e1) = (parse_unary lst1) in 
+      (lst2, Not(e1))
+  |_ -> parse_func_call(toks)
+      
+and parse_func_call toks = 
+  let (lst1, e1) = parse_prim toks in 
+  match lookahead lst1 with 
+  |Some x ->(match x with 
+      |Tok_Int c -> (
+          let lst2 = match_token lst1 (Tok_Int c) in
+          (lst2, FunctionCall(e1, Value(Int(c)))))
+      |Tok_Bool c -> (
+          let lst2 = match_token lst1 (Tok_Bool c) in 
+          (lst2, FunctionCall(e1, Value(Bool c))))
+      |Tok_String c-> (
+          let lst2 = match_token lst1 (Tok_String c) in 
+          (lst2, FunctionCall(e1, Value(String c))))
+      |Tok_ID c -> (
+          let lst2 = match_token lst1 (Tok_ID c) in 
+          (lst2, FunctionCall(e1, (ID c))))
+      |Tok_LParen -> (
+          let lst2 = match_token lst1 Tok_LParen in 
+          let (lst3, e2) = parse_base lst2 in
+          let lst4 = match_token lst3 Tok_RParen in
+          (lst4, FunctionCall(e1, e2)))
+      |_ -> lst1, e1)
+  |_ -> (lst1, e1)
+
+and parse_prim toks = 
+  match lookahead toks with
+  |Some (Tok_Int c) -> let t = (match_token toks (Tok_Int(c))) in 
+      (t, Value(Int c))
+  |Some Tok_Bool(c) -> let t = (match_token toks (Tok_Bool(c))) in
+      (t, Value(Bool(c)))
+  |Some Tok_String(c) -> let t = (match_token toks (Tok_String(c))) in
+      (t, Value(String c))
+  |Some Tok_ID(c) -> let t = (match_token toks (Tok_ID(c))) in 
+      (t, ID c) 
+  |Some Tok_LParen -> let lst2 = (match_token toks Tok_LParen) in
+      (let (lst3, e2) = (parse_base lst2) in
+       match lookahead lst3 with
+       |Some Tok_RParen -> (match_token lst3 Tok_RParen, e2)
+       | _ -> raise (Invalid_argument("right paren not found")))
+  |_ -> raise (InvalidInputException "Error")
+          
+let rec last_element lst =
+  match List.rev lst with
+  | [] -> failwith "empty list"
+  | hd :: _ -> hd
+    
+let rec remove_last lst =
+  match List.rev lst with
+  | [] -> failwith "empty list"
+  | _ :: tl -> List.rev tl
+                 
+                 
+
+          
+let rec parse_mutop toks = 
+  
+  if List.hd toks = Tok_DoubleSemi then ([], NoOp)
+  else
+    let toks1 = if last_element toks <> Tok_DoubleSemi then raise (Failure("Some error")) 
+      else (remove_last toks) in 
+
+    let(t, lst) = parse_def toks1 in 
+    if t = [] then (t, lst) else raise (Failure("Some error")) 
+      
+and parse_def toks =
+  
+  match lookahead toks with
+  |Some Tok_Def -> (let lst1 = match_token toks Tok_Def in 
+                    let (lst2, e1) = (parse_prim  lst1) in
+                    match lookahead lst2 with 
+                    |Some Tok_Equal -> let lst3 = match_token lst2 Tok_Equal in 
+                        let(lst4, e2) = parse_base lst3 in
+                        let c = match e1 with
+                          |ID d -> d
+                          |_ -> "w" in
+                        (lst4, Def(c, e2))
+                    |_ -> raise (Invalid_argument "Exception"))
+  |Some Tok_DoubleSemi -> parse_noop toks
+  |_ -> parse_exprmut toks
+          
+and parse_exprmut toks = 
+  let (lst1, e1) = parse_base toks in
+  (lst1, Expr(e1))
+  
+and parse_noop toks = 
+  ([], NoOp) 
+
+  let ref_extend env x v = (x, ref v)::env
+
+let extend env x v = (x,v)::env
+
+(* Returns [v] if [x:v] is a mapping in [env]; uses the
+   most recent if multiple mappings for [x] are present *)
+let rec ref_lookup env x =
+  match env with
+  | [] -> raise (DeclareError ("Unbound variable " ^ x))
+  | (var, value)::t -> if x = var then !value else ref_lookup t x
+
+let rec lookup env x = 
+  match env with
+  [] -> raise (DeclareError ("Unbound variable " ^ x))
+  | (var, value)::t -> if x = var then value else lookup t x
+
+(*Creates a placeholder mapping for [x] in [env]; needed
+   for handling recursive definitions *)
+let ref_extend_tmp env x = (x, ref (Int 0))::env
+
+(* Updates the (most recent) mapping in [env] for [x] to [v] *)
+let rec ref_update env x v =
+  match env with
+  | [] -> raise (DeclareError ("Unbound variable " ^ x))
+  | (var, value)::t -> if x = var then (value := v) else ref_update t x v
+        
+(* Removes the most recent variable,value binding from the environment *)
+let rec remove env x = match env with
+  [] -> []
+  | (var,value)::t -> if x = var then t else (var,value)::(remove t x)
+
+(* Part 1: Evaluating expressions *)
+
+(* Evaluates MicroCaml expression [e] in environment [env],
+   returning a value, or throwing an exception on error *)
+let rec eval_expr env e = 
+
+  match e with 
+  |Value(Int c) -> Int c
+  |Value(Bool c) -> Bool c
+  |Value(String c) -> String c
+  |Value(Closure(env, v, e1)) -> Closure (env, v, e1)
+  |ID c -> let v = (lookup env c) in !v
+  |Not(e1) -> (match (eval_expr env e1) with
+      |Bool c -> Bool(not c)
+      |_ -> raise (Invalid_argument "Wrong"))
+  |Binop(op, e1, e2) -> 
+      let e3 = eval_expr env e1 in 
+      let e4 = eval_expr env e2 in 
+      if op = Add || op = Sub || op = Mult || op = Div||op = Greater || op = Less|| op = GreaterEqual || op = LessEqual
+         ||op = Concat || op = Equal || op = NotEqual|| op = Or || op = And then 
+        match(op, e3, e4) with
+        |Add, Int c1, Int c2 -> Int(c1+c2) 
+        |Sub, Int c1, Int c2 -> Int(c1-c2) 
+        |Mult, Int c1, Int c2 -> Int(c1*c2)
+        |Div, Int c1, Int c2 -> if (c2 != 0) then Int(c1/c2) else raise DivByZeroError 
+        |Greater, Int c1, Int c2 -> Bool (c1>c2)
+        |Less, Int c1, Int c2 -> Bool (c1<c2) 
+        |GreaterEqual, Int c1, Int c2 -> Bool(c1>=c2)
+        |LessEqual, Int c1, Int c2 -> Bool(c1<=c2) 
+        |Concat, String c1, String c2 -> String (c1 ^ c2) 
+        |Equal, Int c1, Int c2 -> Bool (c1 = c2)
+        |Equal, Bool c1, Bool c2 -> Bool (c1 = c2)
+        |Equal, String c1, String c2 -> Bool (c1 = c2)
+        |NotEqual, Int c1, Int c2 -> Bool (c1 != c2)
+        |NotEqual, Bool c1, Bool c2 -> Bool (c1 != c2)
+        |NotEqual, String c1, String c2 -> Bool (c1 != c2) 
+        |Or, Bool c1, Bool c2 -> Bool(c1||c2)
+        |And, Bool c1, Bool c2 -> Bool (c1&&c2)
+        |_ -> raise (TypeError "Something bad")
+
+      else raise (DeclareError "No")
+           
+  |If(guard, true_branch, false_branch) ->( match (eval_expr env guard) with
+      |Bool true -> eval_expr env true_branch
+      |Bool false -> eval_expr env false_branch
+      |_ -> raise (TypeError "No bool"))
+    
+  |Let(id, false, e1, e2) -> (
+      let v1 = eval_expr env e1 in
+      let env2 = (ref_extend env id v1) in 
+      eval_expr env2 e2 )
+  |Let(id, true, e1, e2) -> (
+      let env1 = ref_extend_tmp env id in
+      let v1 = eval_expr env1 e1 in
+      let () = ref_update env1 id v1 in
+      (eval_expr env1 e2))
+
+            
+  |Fun (id, e1) -> Closure (env, id, e1)
+
+                     
+      
+  |FunctionCall(e1, e2) ->
+      let v1 = eval_expr env e1 in 
+      let v2 = eval_expr env e2 in
+      (match v1 with 
+       |Closure(env1, x, exp) -> 
+           let env2 = ref_extend env1 x v2 in 
+           eval_expr env2 exp
+       |_ -> raise (TypeError "Wrong input")) 
+
+      
+      
+let eval_mutop env m = match m with 
+  
+  |Def(id, e1) -> 
+      let env1 = ref_extend_tmp env id in
+      let v1 = eval_expr env1 e1 in
+      let () = ref_update env1 id v1 in
+      (env1, Some v1)
+  |Expr(e) ->
+      let e1 = eval_expr env e in
+      (env, Some e1) 
+      
+      
+  |NoOp -> (env, None)
